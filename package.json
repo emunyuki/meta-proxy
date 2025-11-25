@@ -1,0 +1,6 @@
+{
+  "name": "meta-proxy",
+  "version": "1.0.0",
+  "description": "Simple Vercel serverless proxy for Meta Graph API",
+  "private": true
+}
