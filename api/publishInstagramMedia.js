@@ -1,63 +1,82 @@
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { image_url, caption } = req.body;
-  const IG_BUSINESS_ID = process.env.IG_BUSINESS_ID;
-  const TOKEN = process.env.PAGE_ACCESS_TOKEN;
-
-  if (!IG_BUSINESS_ID || !TOKEN) {
-    return res.status(500).json({ error: 'Missing environment variables' });
-  }
-
-  if (!image_url) {
-    return res.status(400).json({ error: 'Missing image_url in request body' });
-  }
-
   try {
-    // Step 1: Create media container
-    const containerResponse = await fetch(
-      `https://graph.facebook.com/v20.0/${IG_BUSINESS_ID}/media`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_url: image_url,
-          caption: caption || '',
-          access_token: TOKEN
-        })
-      }
-    );
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
 
-    const containerResult = await containerResponse.json();
+    const { image_url, caption } = req.body;
 
-    if (!containerResponse.ok || !containerResult.id) {
-      return res.status(400).json({ 
-        error: 'Failed to create media container', 
-        details: containerResult 
+    if (!image_url || !caption) {
+      return res.status(400).json({
+        error: "Missing required fields: image_url, caption"
       });
     }
 
-    const containerId = containerResult.id;
+    const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN;
+    const IG_BUSINESS_ID = process.env.IG_BUSINESS_ID;
 
-    // Step 2: Publish the container
-    const publishResponse = await fetch(
-      `https://graph.facebook.com/v20.0/${IG_BUSINESS_ID}/media_publish`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          creation_id: containerId,
-          access_token: TOKEN
-        })
-      }
-    );
+    if (!META_ACCESS_TOKEN || !IG_BUSINESS_ID) {
+      return res.status(500).json({
+        error: "Instagram credentials missing from environment variables"
+      });
+    }
 
-    const publishResult = await publishResponse.json();
-    res.status(publishResponse.ok ? 200 : 400).json(publishResult);
+    // STEP 1: Create IG Media object
+    const createMediaUrl = `https://graph.facebook.com/v20.0/${IG_BUSINESS_ID}/media`;
+
+    const mediaResponse = await fetch(createMediaUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        image_url,
+        caption,
+        access_token: META_ACCESS_TOKEN
+      })
+    });
+
+    const mediaData = await mediaResponse.json();
+
+    if (!mediaResponse.ok) {
+      return res.status(mediaResponse.status).json({
+        error: "Instagram media creation failed",
+        details: mediaData
+      });
+    }
+
+    const creationId = mediaData.id;
+
+    // STEP 2: Publish IG Media object
+    const publishUrl = `https://graph.facebook.com/v20.0/${IG_BUSINESS_ID}/media_publish`;
+
+    const publishResponse = await fetch(publishUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        creation_id: creationId,
+        access_token: META_ACCESS_TOKEN
+      })
+    });
+
+    const publishData = await publishResponse.json();
+
+    if (!publishResponse.ok) {
+      return res.status(publishResponse.status).json({
+        error: "Instagram publish failed",
+        details: publishData
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      platform: "instagram",
+      response: publishData
+    });
 
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("IG Publish Error:", error);
+    return res.status(500).json({
+      error: "Server Error",
+      details: error.message
+    });
   }
 }
