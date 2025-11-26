@@ -45,7 +45,10 @@ export default async function handler(req, res) {
 
     const creationId = mediaData.id;
 
-    // STEP 2: Publish IG Media object
+    // STEP 2: Wait 2 seconds for IG to finish downloading the media
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // STEP 3: Publish IG Media object
     const publishUrl = `https://graph.facebook.com/v20.0/${IG_BUSINESS_ID}/media_publish`;
 
     const publishResponse = await fetch(publishUrl, {
