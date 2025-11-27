@@ -23,14 +23,14 @@ export default async function handler(req, res) {
         error: "Facebook credentials missing from environment variables"
       });
     }
-    // Facebook endpoint for publishing a PHOTO post
-    const url = `https://graph.facebook.com/v24.0/${FB_PAGE_ID}/photos`;
+    // Facebook endpoint for publishing to page FEED with image
+    const url = `https://graph.facebook.com/v24.0/${FB_PAGE_ID}/feed`;
     const fbResponse = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        url: image_url,
-        caption: message,
+        message: message,
+        picture: image_url,
         access_token: PAGE_ACCESS_TOKEN
       })
     });
