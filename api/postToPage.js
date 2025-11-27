@@ -31,6 +31,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         message: message,
         picture: image_url,
+        link: "https://www.novior.com",
         access_token: PAGE_ACCESS_TOKEN
       })
     });
