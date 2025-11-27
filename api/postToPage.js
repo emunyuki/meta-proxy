@@ -11,9 +11,9 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: "Method not allowed" });
     }
     const { message, image_url } = req.body;
-    if (!image_url || !message) {
+    if (!message) {
       return res.status(400).json({
-        error: "Missing required fields: image_url, message"
+        error: "Missing required field: message"
       });
     }
     const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
@@ -23,15 +23,13 @@ export default async function handler(req, res) {
         error: "Facebook credentials missing from environment variables"
       });
     }
-    // Facebook endpoint for publishing to page FEED with image
+    // Facebook endpoint for publishing to page FEED
     const url = `https://graph.facebook.com/v24.0/${FB_PAGE_ID}/feed`;
     const fbResponse = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message: message,
-        picture: image_url,
-        link: "https://www.novior.com",
         access_token: PAGE_ACCESS_TOKEN
       })
     });
